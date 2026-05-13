@@ -3,7 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 
 # Load model
-model_type = "MiDaS_small"
+model_type = "DPT_Large"
 
 midas = torch.hub.load("intel-isl/MiDaS", model_type)
 midas.eval()
