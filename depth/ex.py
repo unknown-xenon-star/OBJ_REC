@@ -1,65 +1,51 @@
 import cv2
-import torch
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from PIL import Image
 
-# Load model
-model_type = "MiDaS_small"
 
-midas = torch.hub.load("intel-isl/MiDaS", model_type)
-midas.eval()
+MODEL_REPO = "isl-org/ZoeDepth"
+MODEL_NAME = "ZoeD_NK"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Transforms
-transforms = torch.hub.load("intel-isl/MiDaS", "transforms")
+_zoe_model = None
 
-transform = transforms.small_transform
 
-def depth(img_data):    
-    img = cv2.cvtColor(img_data, cv2.COLOR_BGR2RGB)
-    # Prepare input
-    input_batch = transform(img)
+def _get_model():
+    global _zoe_model
 
-    # Prediction
+    if _zoe_model is None:
+        _zoe_model = torch.hub.load(MODEL_REPO, MODEL_NAME, pretrained=True)
+        _zoe_model = _zoe_model.to(DEVICE).eval()
+
+    return _zoe_model
+
+
+def depth(img_data):
+    rgb_image = cv2.cvtColor(img_data, cv2.COLOR_BGR2RGB)
+    model = _get_model()
+    pil_image = Image.fromarray(rgb_image)
+
     with torch.no_grad():
-        prediction = midas(input_batch)
+        depth_map = model.infer_pil(pil_image)
 
-        prediction = torch.nn.functional.interpolate(
-            prediction.unsqueeze(1),
-            size=img.shape[:2],
-            mode="bicubic",
-            align_corners=False,
-        ).squeeze()
-
-    depth_map = prediction.cpu().numpy()
-
-    return depth_map
+    return np.asarray(depth_map, dtype=np.float32)
 
 
 def depth_of_img(img_data_file):
-
-    # Read image
     img = cv2.imread(img_data_file)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    if img is None:
+        raise FileNotFoundError(f"Failed to read image: {img_data_file}")
 
-    # Prepare input
-    input_batch = transform(img)
+    depth_map = depth(img)
 
-    # Prediction
-    with torch.no_grad():
-        prediction = midas(input_batch)
-
-        prediction = torch.nn.functional.interpolate(
-            prediction.unsqueeze(1),
-            size=img.shape[:2],
-            mode="bicubic",
-            align_corners=False,
-        ).squeeze()
-
-    depth_map = prediction.cpu().numpy()
-
-    # Show
     plt.imshow(depth_map)
     plt.colorbar()
     plt.show()
 
+    return depth_map
+
+
 if __name__ == "__main__":
-    depth("image.jpg")
+    depth_of_img("image.jpg")
