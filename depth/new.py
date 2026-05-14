@@ -1,7 +1,7 @@
 import cv2
 
-from blue_dots import plot
-
+from one_way import plot
+from app_depth import real_distance
 
 def main(camera_index: int) -> None:
     camera = cv2.VideoCapture(camera_index)
@@ -19,8 +19,9 @@ def main(camera_index: int) -> None:
             frame = cv2.flip(frame, 1)
             annotated_frame, distance = plot(frame)
 
+            
             center_text = (
-                f"Distance: {distance:.2f}" if distance is not None else "Distance: N/A"
+                f"Distance: {real_distance(distance):.2f}" if distance is not None else "Distance: N/A"
             )
             cv2.putText(
                 annotated_frame,
@@ -28,7 +29,7 @@ def main(camera_index: int) -> None:
                 (20, 40),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.8,
-                (255, 255, 255),
+                (0, 0, 255),
                 2,
             )
 

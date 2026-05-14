@@ -28,12 +28,13 @@ def _find_centers(mask: np.ndarray) -> list[tuple[int, int]]:
 
     return centers
 
-
 def plot(img: np.ndarray) -> tuple[np.ndarray, float | None]:
     annotated = img.copy()
+
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     mask = cv2.inRange(hsv, LOWER_BLUE, UPPER_BLUE)
+
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, MORPH_KERNEL)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, MORPH_KERNEL)
 
@@ -52,24 +53,3 @@ def plot(img: np.ndarray) -> tuple[np.ndarray, float | None]:
     return annotated, distance
 
 
-if __name__ == "__main__":
-    img = cv2.imread("dots.png")
-    if img is None:
-        raise FileNotFoundError("dots.png not found")
-
-    annotated_img, distance = plot(img)
-    label = f"Distance: {distance:.2f}" if distance is not None else "Distance: N/A"
-    cv2.putText(
-        annotated_img,
-        label,
-        (20, 40),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.8,
-        (255, 255, 255),
-        2,
-    )
-    cv2.imshow("Blue Dots", annotated_img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-# 97    115
